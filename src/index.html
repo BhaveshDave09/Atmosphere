@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atmosphere - Premium Interactive Weather Station</title>
+    
+    <!-- Tailwind CSS for utility layout construction -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Inter & JetBrains Mono Fonts for premium typography and terminal diagnostics -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome for secondary decorative icon actions -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet mapping library for dark-mode weather coordinate positioning -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="min-h-screen relative overflow-y-auto selection:bg-sky-500/30 selection:text-white transition-all duration-1000">
+
+    <!-- Custom Cybernetic System Calibration Boot Loader Screen -->
+    <div id="system-boot-loader" class="fixed inset-0 bg-[#02050c] z-[9999] flex flex-col items-center justify-center p-6 transition-all duration-[1000ms] ease-in-out">
+        <div class="w-full max-w-md p-8 rounded-[2.5rem] glass-panel border border-white/10 flex flex-col items-center text-center space-y-6 relative overflow-hidden shadow-[0_0_80px_rgba(2,132,199,0.3)]">
+            <div class="shine-glow"></div>
+            <!-- Interactive background scanlines inside diagnostic panel -->
+            <div class="absolute inset-0 bg-[linear-gradient(rgba(18,24,38,0)_95%,rgba(56,189,248,0.1)_95%)] bg-[length:100%_40px] animate-[scan_3s_linear_infinite] pointer-events-none opacity-40"></div>
+            
+            <!-- Rotating Hologram Ring -->
+            <div class="relative w-24 h-24 flex items-center justify-center">
+                <div class="absolute inset-0 rounded-full border-2 border-dashed border-sky-500/20 animate-[spin_10s_linear_infinite]"></div>
+                <div class="absolute inset-2 rounded-full border border-sky-400/40 animate-[spin_4s_linear_infinite_reverse]"></div>
+                <!-- Core Glowing Active Radar Node -->
+                <div class="w-4 h-4 rounded-full bg-sky-400 shadow-[0_0_20px_rgba(56,189,248,1)] animate-ping"></div>
+            </div>
+
+            <!-- Branding -->
+            <div class="space-y-1">
+                <h1 class="text-3xl font-black tracking-widest text-white">ATMOSPHERE</h1>
+                <p class="text-[10px] text-sky-400 font-extrabold uppercase tracking-widest bg-sky-500/10 border border-sky-500/20 px-3 py-1 rounded-full inline-block">Created by Bhaveshh</p>
+            </div>
+
+            <!-- Simulation Terminal Log Box -->
+            <div class="w-full bg-slate-950/90 rounded-2xl p-4 text-left font-mono text-[9px] text-emerald-400 border border-white/5 h-28 overflow-y-auto relative scrollbar-hide">
+                <div id="boot-terminal-lines" class="space-y-1"></div>
+            </div>
+
+            <!-- Custom Progress Indicator -->
+            <div class="w-full space-y-2">
+                <div class="flex justify-between text-[10px] text-sky-200/40 uppercase font-bold tracking-wider">
+                    <span id="boot-status-text">Calibrating Transceivers...</span>
+                    <span id="boot-progress-percentage">0%</span>
+                </div>
+                <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                    <div id="boot-progress-bar" class="h-full bg-gradient-to-r from-sky-500 via-sky-400 to-emerald-400 transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Tap to Initiate / Bypass Action -->
+            <button onclick="skipBootSequence()" class="px-5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[9px] font-bold text-slate-400 hover:text-white border border-white/5 uppercase tracking-widest transition">
+                Skip Diagnostics
+            </button>
+        </div>
+    </div>
+
+    <!-- Atmospheric Simulation Canvas -->
+    <canvas id="weather-background" class="fixed inset-0 w-full h-full -z-20 pointer-events-none transition-opacity duration-1000"></canvas>
+    
+    <!-- Organic Morphing Fluid Elements -->
+    <div id="ambient-fluid-1" class="floating-blob blob-1"></div>
+    <div id="ambient-fluid-2" class="floating-blob blob-2"></div>
+    <div id="ambient-fluid-3" class="floating-blob blob-3"></div>
+
+    <!-- Immersive Zen Overlay Portal -->
+    <div id="zen-overlay-portal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl px-6 py-8 text-center opacity-0 scale-95 pointer-events-none transition-all duration-1000 z-50 flex flex-col items-center justify-center gap-6">
+        <h1 id="zen-clock" class="text-7xl sm:text-8xl font-black tracking-tighter text-white drop-shadow-2xl font-mono">00:00</h1>
+        <p id="zen-date" class="text-xs text-sky-200/50 uppercase tracking-widest font-bold">DATE CALENDAR</p>
+        
+        <div class="flex items-center gap-6 my-4">
+            <span id="zen-temp" class="text-8xl font-black tracking-tighter text-white drop-shadow-2xl">--</span>
+            <span class="text-3xl font-light text-sky-300 -ml-2">°C</span>
+            <div id="zen-weather-icon-container" class="w-20 h-20 filter drop-shadow-[0_10px_20px_rgba(56,189,248,0.4)]"></div>
+        </div>
+        
+        <h2 id="zen-greeting" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Enjoy the tranquility.</h2>
+        <p id="zen-location-badge" class="text-xs bg-sky-500/10 text-sky-400 px-3.5 py-1.5 rounded-full border border-sky-400/20 font-bold tracking-widest uppercase">PARIS, FR</p>
+        
+        <button onclick="toggleZenMode()" class="mt-8 px-6 py-3.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold uppercase tracking-widest text-white transition flex items-center gap-2">
+            <i class="fa-solid fa-compress"></i> Exit Zen Space
+        </button>
+    </div>
+
+    <!-- Main Dashboard Viewport Layout -->
+    <div id="main-app-content" class="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 py-6 md:py-8 flex flex-col min-h-screen gap-6 opacity-0 scale-[0.98] transition-all duration-[1200ms] ease-out">
+        
+        <!-- Header Controls & Brand Identification -->
+        <header class="flex flex-col lg:flex-row gap-5 items-center justify-between w-full pb-2 hide-on-zen transition-all duration-700">
+            
+            <!-- Branding Layout with premium "Created by Bhaveshh" signature stamp -->
+            <div class="flex items-center gap-4 group">
+                <div class="p-3 rounded-2xl glass-card flex items-center justify-center text-sky-400 text-2xl shadow-lg border border-white/10 group-hover:scale-105 duration-300">
+                    <svg class="w-8 h-8" viewBox="0 0 64 64" fill="none">
+                        <circle cx="32" cy="32" r="16" fill="url(#brandGrad)" />
+                        <path d="M22 42h20c3.3 0 6-2.7 6-6s-2.7-6-6-6h-.7c-.8-5.7-5.7-10-11.3-10-4.8 0-9 3.2-10.4 7.8C15 29 12 32.6 12 37c0 5 4 9 10 9z" fill="#ffffff" fill-opacity="0.85" />
+                        <defs>
+                            <linearGradient id="brandGrad" x1="16" y1="16" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#38bdf8" />
+                                <stop offset="1" stop-color="#0284c7" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2.5">
+                        <h1 class="text-2xl font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-sky-300 bg-clip-text text-transparent">ATMOSPHERE</h1>
+                        <span class="text-[10px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2.5 py-0.5 rounded-full font-bold tracking-wider uppercase">Created by Bhaveshh</span>
+                    </div>
+                    <p class="text-[10px] text-sky-200/40 uppercase tracking-widest font-bold">Premium Digital Meteorology Station</p>
+                </div>
+            </div>
+
+            <!-- Central Autocomplete Command Bar -->
+            <div class="relative w-full max-w-lg">
+                <div class="flex items-center w-full">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input id="city-search" type="text" placeholder="Discover a city or coordinates..." class="w-full pl-11 pr-11 py-3.5 rounded-2xl glass-input text-sm tracking-wide font-medium placeholder:text-slate-500" autocomplete="off">
+                        <button id="clear-search" class="absolute right-4.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition hidden">
+                            <i class="fa-solid fa-xmark text-sm"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Vocal Command Search -->
+                    <button id="voice-search" title="Voice Recognition Search" class="ml-2.5 p-4 rounded-2xl glass-panel text-sky-400 hover:text-sky-300 hover:bg-white/10 flex items-center justify-center transition shadow-lg">
+                        <i class="fa-solid fa-microphone text-sm"></i>
+                    </button>
+                </div>
+
+                <!-- Autocomplete Dropdown Container -->
+                <div id="autocomplete-results" class="absolute left-0 right-0 mt-2 rounded-2xl glass-panel p-2 shadow-2xl border border-white/10 hidden z-50 max-h-72 overflow-y-auto"></div>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+                <button id="add-favorite" class="px-5 py-3 rounded-2xl glass-panel text-xs flex items-center gap-2.5 font-bold transition-all duration-300 active:scale-95" title="Favorite this City">
+                    <i id="fav-star" class="fa-regular fa-star text-sm transition-transform duration-300"></i>
+                    <span id="fav-btn-text" class="hidden sm:inline">Add to Favorites</span>
+                </button>
+                <button id="gps-locate" class="p-3.5 rounded-2xl glass-panel text-sky-400 hover:text-sky-300 flex items-center justify-center animate-pulse" title="Locate via GPS">
+                    <i class="fa-solid fa-location-crosshairs text-sm"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dynamic Audio & Zen Cinematic Dock -->
+        <section class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-2 hide-on-zen transition-all duration-700">
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- Procedural Audio Synth Controller -->
+                <button id="audio-synth-toggle" onclick="toggleAudioSynth()" class="px-4 py-3 rounded-2xl glass-panel text-xs font-bold text-slate-300 hover:text-sky-400 flex items-center gap-3 transition">
+                    <div id="soundwave-container" class="flex items-center gap-1 hidden">
+                        <div class="soundwave-bar"></div>
+                        <div class="soundwave-bar"></div>
+                        <div class="soundwave-bar"></div>
+                        <div class="soundwave-bar"></div>
+                    </div>
+                    <i id="sound-speaker-icon" class="fa-solid fa-volume-xmark text-sm"></i>
+                    <span id="audio-synth-status">Enable Weather Soundscape</span>
+                </button>
+
+                <!-- Cinematic Zen Mode Trigger -->
+                <button onclick="toggleZenMode()" class="px-4 py-3 rounded-2xl glass-panel text-xs font-bold text-slate-300 hover:text-emerald-400 flex items-center gap-2.5 transition">
+                    <i class="fa-solid fa-eye text-sm"></i>
+                    <span>Cinematic Zen Space</span>
+                </button>
+            </div>
+            
+            <!-- Quick Recent Searches History tray -->
+            <div class="flex items-center gap-2 text-xs">
+                <span class="text-sky-200/40 font-bold uppercase tracking-wider">Recents:</span>
+                <div id="recent-cities-tray" class="flex gap-2">
+                    <span class="text-sky-200/30 italic">No search history</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Sandbox Override Deck (Simulates weather systems inside live engine) -->
+        <section id="sandbox-section" class="glass-panel p-5 rounded-[2.5rem] border-dashed border-amber-500/20 hide-on-zen transition-all duration-700 flex flex-col gap-4">
+            <div class="shine-glow"></div>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                        <i class="fa-solid fa-sliders text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-white text-base">Climate Simulation Sandbox</h3>
+                        <p class="text-xs text-sky-200/40">Toggle manual manipulation overrides to test visual particle physics and soundscapes</p>
+                    </div>
+                </div>
+                <!-- Interactive Mode Switcher -->
+                <div class="flex items-center bg-slate-950/65 border border-white/10 p-1 rounded-2xl">
+                    <button id="btn-mode-live" onclick="toggleSandboxMode(false)" class="px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase transition tracking-wider bg-sky-500/20 text-sky-300">
+                        <i class="fa-solid fa-satellite-dish mr-1.5"></i> Live Data
+                    </button>
+                    <button id="btn-mode-sandbox" onclick="toggleSandboxMode(true)" class="px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase transition tracking-wider text-slate-400 hover:text-white">
+                        <i class="fa-solid fa-flask mr-1.5"></i> Sandbox Mode
+                    </button>
+                </div>
+            </div>
+
+            <!-- Manual Control Sliders -->
+            <div id="sandbox-controls" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 opacity-40 pointer-events-none transition-all duration-500">
+                <div class="space-y-1.5 bg-white/3 p-3.5 rounded-2xl border border-white/5">
+                    <div class="flex justify-between text-[10px] font-bold text-sky-200/50 uppercase tracking-wider">
+                        <span>Temperature</span>
+                        <span id="sandbox-temp-readout" class="text-white font-extrabold">20°C</span>
+                    </div>
+                    <input id="slider-sandbox-temp" type="range" min="-20" max="50" value="20" class="premium-slider" oninput="adjustSandboxSimulation()">
+                </div>
+                
+                <div class="space-y-1.5 bg-white/3 p-3.5 rounded-2xl border border-white/5">
+                    <div class="flex justify-between text-[10px] font-bold text-sky-200/50 uppercase tracking-wider">
+                        <span>Precipitation</span>
+                        <span id="sandbox-precip-readout" class="text-white font-extrabold">0%</span>
+                    </div>
+                    <input id="slider-sandbox-precip" type="range" min="0" max="100" value="0" class="premium-slider" oninput="adjustSandboxSimulation()">
+                </div>
+
+                <div class="space-y-1.5 bg-white/3 p-3.5 rounded-2xl border border-white/5">
+                    <div class="flex justify-between text-[10px] font-bold text-sky-200/50 uppercase tracking-wider">
+                        <span>Atmosphere Type</span>
+                        <span id="sandbox-type-readout" class="text-white font-extrabold uppercase">Clear</span>
+                    </div>
+                    <select id="select-sandbox-type" class="w-full bg-slate-950/80 border border-white/10 rounded-xl px-2 py-1.5 text-xs font-bold text-sky-300 focus:outline-none" onchange="adjustSandboxSimulation()">
+                        <option value="clear">Clear Skies</option>
+                        <option value="cloudy">Cloudy Cover</option>
+                        <option value="rainy">Rainy Shower</option>
+                        <option value="stormy">Lightning Storm</option>
+                        <option value="snowy">Blizzard Snow</option>
+                        <option value="foggy">Dense Fog</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1.5 bg-white/3 p-3.5 rounded-2xl border border-white/5">
+                    <div class="flex justify-between text-[10px] font-bold text-sky-200/50 uppercase tracking-wider">
+                        <span>Day / Night Cycle</span>
+                        <span id="sandbox-cycle-readout" class="text-white font-extrabold">DAY</span>
+                    </div>
+                    <div class="flex items-center gap-2 justify-center pt-1">
+                        <button id="btn-sandbox-day" onclick="setSandboxCycle(true)" class="flex-1 py-1 px-3 rounded-xl bg-sky-500/20 text-sky-300 text-xs font-bold uppercase transition">Day</button>
+                        <button id="btn-sandbox-night" onclick="setSandboxCycle(false)" class="flex-1 py-1 px-3 rounded-xl bg-white/5 text-slate-400 text-xs font-bold uppercase transition">Night</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Dashboard Configuration Grid -->
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start flex-1 hide-on-zen transition-all duration-700">
+            
+            <!-- LEFT PANEL: Core telemetry summaries, interactive graphics, chronological charts -->
+            <section class="lg:col-span-7 flex flex-col gap-6">
+                
+                <!-- Meteorological Interactive Primary Card with Signature Badge -->
+                <div id="hero-card" class="glass-panel p-6 sm:p-8 rounded-[2.5rem] relative overflow-hidden flex flex-col justify-between min-h-[420px] border-l-4 border-l-sky-500 cursor-pointer" onclick="triggerCardWobble(this)">
+                    <div class="shine-glow"></div>
+                    <div class="absolute -right-20 -top-20 w-64 h-64 bg-sky-500/5 rounded-full blur-[80px] pointer-events-none"></div>
+
+                    <!-- Creator Signature badge inside central card -->
+                    <div class="flex items-center justify-between mb-6 z-10">
+                        <div class="text-[10px] font-extrabold tracking-widest text-sky-300 bg-sky-500/10 border border-sky-400/20 px-3.5 py-1.5 rounded-full flex items-center gap-2 uppercase">
+                            <i class="fa-solid fa-user-check text-[9px]"></i> Created by Bhaveshh
+                        </div>
+                        <span id="day-night-badge" class="text-[10px] font-bold px-3 py-1.5 rounded-xl glass-card text-sky-300 flex items-center gap-2 uppercase tracking-wider">
+                            <i class="fa-solid fa-circle-notch animate-spin"></i> Analyzing...
+                        </span>
+                    </div>
+
+                    <!-- Location Title metadata -->
+                    <div class="flex justify-between items-start z-10">
+                        <div class="space-y-1.5">
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <h2 id="current-location" class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Paris</h2>
+                                <span id="country-badge" class="text-xs px-2.5 py-1 rounded-lg bg-sky-500/15 font-extrabold tracking-widest text-sky-300 uppercase">FR</span>
+                            </div>
+                            <p id="current-date" class="text-xs text-sky-200/50 font-semibold uppercase tracking-wider">--</p>
+                        </div>
+                    </div>
+
+                    <!-- Temperature indicators -->
+                    <div class="flex flex-col sm:flex-row items-center sm:justify-between my-8 gap-8 z-10">
+                        <div class="flex items-baseline gap-1">
+                            <span id="current-temp" class="text-8xl font-black tracking-tighter leading-none text-white font-sans">--</span>
+                            <span class="text-4xl font-light text-sky-300">°C</span>
+                            <div class="ml-5 space-y-0.5 border-l border-white/10 pl-5">
+                                <p class="text-[10px] text-sky-200/40 uppercase font-bold tracking-wider">Sensible Feel</p>
+                                <p id="feels-like" class="text-xl font-extrabold text-white">--°C</p>
+                            </div>
+                        </div>
+
+                        <!-- Animated SVG Weather Icon container -->
+                        <div class="flex flex-col items-center sm:items-end">
+                            <div id="hero-weather-icon-container" class="w-24 h-24 filter drop-shadow-[0_10px_20px_rgba(56,189,248,0.3)]"></div>
+                            <span id="weather-description" class="text-base font-bold tracking-wide text-sky-100 mt-2">Connecting...</span>
+                        </div>
+                    </div>
+
+                    <!-- Sub-telemetry descriptors -->
+                    <div class="grid grid-cols-3 gap-3 pt-6 border-t border-white/8 z-10">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 rounded-xl glass-card text-amber-400 flex items-center justify-center">
+                                <i class="fa-solid fa-temperature-arrow-up text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-[9px] text-sky-200/40 uppercase font-bold tracking-wider">Thermal Max</p>
+                                <p id="high-temp" class="text-sm font-extrabold text-slate-100">--°C</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 rounded-xl glass-card text-sky-400 flex items-center justify-center">
+                                <i class="fa-solid fa-temperature-arrow-down text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-[9px] text-sky-200/40 uppercase font-bold tracking-wider">Thermal Min</p>
+                                <p id="low-temp" class="text-sm font-extrabold text-slate-100">--°C</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 rounded-xl glass-card text-sky-300 flex items-center justify-center">
+                                <i class="fa-solid fa-cloud-showers-heavy text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-[9px] text-sky-200/40 uppercase font-bold tracking-wider">Precip Chance</p>
+                                <p id="precip-prob" class="text-sm font-extrabold text-slate-100">--%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chronological Hourly Progression Panel -->
+                <div class="glass-panel p-6 rounded-[2.5rem] space-y-5 cursor-pointer" onclick="triggerCardWobble(this)">
+                    <div class="shine-glow"></div>
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 rounded-xl glass-card text-sky-400 flex items-center justify-center">
+                                <i class="fa-regular fa-clock text-sm"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-extrabold text-white text-base">Chronological Progression</h3>
+                                <p class="text-xs text-sky-200/40">Examine hourly trends via interactive scrubbing</p>
+                            </div>
+                        </div>
+                        <span id="selected-hour-label" class="text-xs bg-sky-500/10 text-sky-400 font-extrabold px-3 py-1.5 rounded-xl border border-sky-400/25">Current Time</span>
+                    </div>
+
+                    <!-- Sparkline Curve Chart (Procedural SVG Bezier plot) -->
+                    <div class="relative w-full h-28 glass-card rounded-2xl p-2.5 overflow-hidden">
+                        <svg id="timeline-graph" class="w-full h-full" viewBox="0 0 500 100" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="curveGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="rgba(56, 189, 248, 0.4)" />
+                                    <stop offset="100%" stop-color="rgba(56, 189, 248, 0)" />
+                                </linearGradient>
+                            </defs>
+                            <path id="graph-fill" d="" fill="url(#curveGrad)" />
+                            <path id="graph-line" d="" stroke="#38bdf8" stroke-width="2.5" fill="none" stroke-linecap="round" />
+                            <g id="graph-anchors"></g>
+                        </svg>
+                    </div>
+
+                    <!-- Custom Scrubbing Slider -->
+                    <div class="py-1">
+                        <input id="hourly-scrubber" type="range" min="0" max="23" value="0" class="premium-slider">
+                    </div>
+
+                    <!-- Chronological Forecast List (Scrollable panel) -->
+                    <div id="hourly-cards-scroll" class="flex gap-3.5 overflow-x-auto pb-2 scrollbar-hide scroll-smooth"></div>
+                </div>
+
+                <!-- Extended Multi-Day Outlook -->
+                <div class="glass-panel p-6 rounded-[2.5rem] space-y-5 cursor-pointer" onclick="triggerCardWobble(this)">
+                    <div class="shine-glow"></div>
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 rounded-xl glass-card text-sky-400 flex items-center justify-center">
+                            <i class="fa-regular fa-calendar-days text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-white text-base">Synoptic Extended Forecast</h3>
+                            <p class="text-xs text-sky-200/40 font-medium">Regional 7-day atmospheric cycle outlook</p>
+                        </div>
+                    </div>
+                    
+                    <div id="weekly-forecast-container" class="flex flex-col gap-3"></div>
+                </div>
+
+            </section>
+
+            <!-- RIGHT PANEL: Technical instruments (Air quality, UV indices, Wind compass, Leaflet radar) -->
+            <section class="lg:col-span-5 flex flex-col gap-6">
+                
+                <!-- Specialized Meteorological Instruments Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    
+                    <!-- Instrument Widget: Air Quality Index -->
+                    <div class="glass-panel p-5 rounded-[2.5rem] flex flex-col justify-between min-h-[190px] cursor-pointer" onclick="triggerCardWobble(this)">
+                        <div class="shine-glow"></div>
+                        <div class="flex justify-between items-start">
+                            <div class="p-2.5 rounded-xl glass-card text-emerald-400">
+                                <i class="fa-solid fa-wind text-sm"></i>
+                            </div>
+                            <span class="text-[9px] text-sky-200/40 uppercase tracking-widest font-extrabold">Particulate Index</span>
+                        </div>
+                        
+                        <div class="flex items-center gap-4 my-2">
+                            <!-- Visual Ring SVG Indicator -->
+                            <div class="relative w-16 h-16 flex-shrink-0">
+                                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                    <path class="text-white/10" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                    <path id="aqi-ring-stroke" class="text-emerald-400 transition-all duration-1000" stroke-dasharray="0, 100" stroke-width="3" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span id="aqi-ring-val" class="text-sm font-black text-white">--</span>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-sky-200/40 uppercase font-extrabold tracking-wider">US Air Quality</p>
+                                <h4 id="aqi-value" class="text-xl font-black text-white">Loading...</h4>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span id="aqi-badge" class="text-[9px] px-3 py-1.5 rounded-xl font-extrabold uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-400/20">Analyzing</span>
+                        </div>
+                    </div>
+
+                    <!-- Instrument Widget: UV Radiation -->
+                    <div class="glass-panel p-5 rounded-[2.5rem] flex flex-col justify-between min-h-[190px] cursor-pointer" onclick="triggerCardWobble(this)">
+                        <div class="shine-glow"></div>
+                        <div class="flex justify-between items-start">
+                            <div class="p-2.5 rounded-xl glass-card text-orange-400">
+                                <i class="fa-solid fa-certificate text-sm"></i>
+                            </div>
+                            <span class="text-[9px] text-sky-200/40 uppercase tracking-widest font-extrabold">UV Radiation</span>
+                        </div>
+
+                        <div class="flex items-center gap-4 my-2">
+                            <!-- Visual Ring SVG Indicator -->
+                            <div class="relative w-16 h-16 flex-shrink-0">
+                                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                    <path class="text-white/10" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                    <path id="uv-ring-stroke" class="text-orange-400 transition-all duration-1000" stroke-dasharray="0, 100" stroke-width="3" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span id="uv-ring-val" class="text-sm font-black text-white">--</span>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-sky-200/40 uppercase font-extrabold tracking-wider">Radiation Index</p>
+                                <h4 id="uv-value" class="text-xl font-black text-white">Loading...</h4>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span id="uv-badge" class="text-[9px] px-3 py-1.5 rounded-xl font-extrabold uppercase tracking-widest bg-orange-500/10 text-orange-400 border border-orange-400/20">Analyzing</span>
+                        </div>
+                    </div>
+
+                    <!-- Wind Directional Vane -->
+                    <div class="glass-panel p-5 rounded-[2.5rem] flex flex-col justify-between min-h-[190px] cursor-pointer" onclick="triggerCardWobble(this)">
+                        <div class="shine-glow"></div>
+                        <div class="flex justify-between items-start">
+                            <div class="p-2.5 rounded-xl glass-card text-sky-400">
+                                <i class="fa-solid fa-compass text-sm"></i>
+                            </div>
+                            <span class="text-[9px] text-sky-200/40 uppercase tracking-widest font-extrabold">Wind Velocity</span>
+                        </div>
+
+                        <div class="flex items-center gap-4 my-2">
+                            <!-- Compass dial -->
+                            <div class="relative w-16 h-16 flex-shrink-0 bg-white/5 rounded-full border border-white/10 p-1 flex items-center justify-center">
+                                <span class="absolute top-0.5 text-[8px] font-bold text-slate-400">N</span>
+                                <span class="absolute bottom-0.5 text-[8px] font-bold text-slate-400">S</span>
+                                <svg class="w-8 h-8 wind-compass-needle" viewBox="0 0 24 24" id="wind-compass-icon">
+                                    <polygon points="12,2 16,22 12,18 8,22" fill="#38bdf8" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-sky-200/40 uppercase font-extrabold tracking-wider">Current Velocity</p>
+                                <h4 id="wind-speed" class="text-xl font-black text-white">-- km/h</h4>
+                                <p id="wind-direction-degrees" class="text-[9px] text-sky-300/60 font-semibold tracking-wider uppercase">--</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span id="wind-gusts" class="text-[9px] text-sky-200/50 font-bold block">Gusting speed: -- km/h</span>
+                        </div>
+                    </div>
+
+                    <!-- Air Saturation Gauges -->
+                    <div class="glass-panel p-5 rounded-[2.5rem] flex flex-col justify-between min-h-[190px] cursor-pointer" onclick="triggerCardWobble(this)">
+                        <div class="shine-glow"></div>
+                        <div class="flex justify-between items-start">
+                            <div class="p-2.5 rounded-xl glass-card text-cyan-400">
+                                <i class="fa-solid fa-droplet text-sm"></i>
+                            </div>
+                            <span class="text-[9px] text-sky-200/40 uppercase tracking-widest font-extrabold">Air Saturation</span>
+                        </div>
+
+                        <div class="flex items-center gap-4 my-2">
+                            <!-- Visual Ring SVG Indicator -->
+                            <div class="relative w-16 h-16 flex-shrink-0">
+                                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                    <path class="text-white/10" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                    <path id="humidity-ring-stroke" class="text-cyan-400 transition-all duration-1000" stroke-dasharray="0, 100" stroke-width="3" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span id="humidity-ring-val" class="text-sm font-black text-white">--</span>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-sky-200/40 uppercase font-extrabold tracking-wider">Hygrometer</p>
+                                <h4 id="humidity-value" class="text-xl font-black text-white">Loading...</h4>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span id="dew-point" class="text-[9px] text-sky-200/50 font-bold block">Dew point estimate: --°C</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Dynamic Pollutant Drawer Analytics -->
+                <div class="glass-panel p-5 rounded-[2.5rem] space-y-4 cursor-pointer" onclick="triggerCardWobble(this)">
+                    <div class="shine-glow"></div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-2 rounded-xl glass-card text-emerald-400 flex items-center justify-center">
+                                <i class="fa-solid fa-flask-vial text-sm"></i>
+                            </div>
+                            <span class="text-sm font-black text-white">Detailed Particulate Speciation</span>
+                        </div>
+                        <span class="text-[9px] bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-400/20 font-bold uppercase tracking-wider">Live µg/m³ Metrics</span>
+                    </div>
+
+                    <div class="space-y-3.5">
+                        <!-- PM2.5 Spec -->
+                        <div>
+                            <div class="flex justify-between text-[10px] font-bold text-sky-200/50 uppercase tracking-wider mb-1">
+                                <span>Particulate Matter (PM<sub>2.5</sub>)</span>
+                                <span id="val-pm25" class="text-white font-extrabold">-- µg/m³</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                <div id="bar-pm25" class="h-full bg-emerald-400 rounded-full transition-all duration-1000" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <!-- PM10 Spec -->
+                        <div>
+                            <div class="flex justify-between text-[10px] font-bold text-sky-200/50 uppercase tracking-wider mb-1">
+                                <span>Particulate Matter (PM<sub>10</sub>)</span>
+                                <span id="val-pm10" class="text-white font-extrabold">-- µg/m³</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                <div id="bar-pm10" class="h-full bg-emerald-400 rounded-full transition-all duration-1000" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <!-- Nitrogen Dioxide NO2 -->
+                        <div>
+                            <div class="flex justify-between text-[10px] font-bold text-sky-200/50 uppercase tracking-wider mb-1">
+                                <span>Nitrogen Dioxide (NO<sub>2</sub>)</span>
+                                <span id="val-no2" class="text-white font-extrabold">-- µg/m³</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                <div id="bar-no2" class="h-full bg-sky-400 rounded-full transition-all duration-1000" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <!-- Ozone O3 -->
+                        <div>
+                            <div class="flex justify-between text-[10px] font-bold text-sky-200/50 uppercase tracking-wider mb-1">
+                                <span>Ozone (O<sub>3</sub>)</span>
+                                <span id="val-o3" class="text-white font-extrabold">-- µg/m³</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                <div id="bar-o3" class="h-full bg-amber-400 rounded-full transition-all duration-1000" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Live Kinetic Wind Joystick -->
+                <div class="glass-panel p-5 rounded-[2.5rem] space-y-4 cursor-pointer" onclick="triggerCardWobble(this)">
+                    <div class="shine-glow"></div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-2 rounded-xl glass-card text-sky-400 flex items-center justify-center">
+                                <i class="fa-solid fa-gamepad text-sm"></i>
+                            </div>
+                            <span class="text-sm font-black text-white">Atmospheric Wind Vector Joystick</span>
+                        </div>
+                        <span id="joystick-vector-readout" class="text-[9px] text-sky-300/60 font-mono tracking-widest font-extrabold">VECTOR: [0.0, 0.0]</span>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row items-center gap-6 p-2 bg-slate-950/20 rounded-2xl border border-white/5">
+                        <!-- Dual axis slider joystick track -->
+                        <div class="relative w-28 h-28 rounded-full wind-joystick-track flex items-center justify-center flex-shrink-0" id="joystick-boundary">
+                            <span class="absolute top-1.5 text-[8px] font-bold text-slate-400/60">N</span>
+                            <span class="absolute bottom-1.5 text-[8px] font-bold text-slate-400/60">S</span>
+                            <span class="absolute left-1.5 text-[8px] font-bold text-slate-400/60">W</span>
+                            <span class="absolute right-1.5 text-[8px] font-bold text-slate-400/60">E</span>
+                            <div class="absolute w-20 h-20 rounded-full border border-dashed border-white/5"></div>
+                            <!-- Drag handle knob -->
+                            <div id="joystick-knob" class="absolute w-8 h-8 rounded-full bg-sky-500 wind-joystick-knob transition-all duration-150 flex items-center justify-center text-white text-[10px]">
+                                <i class="fa-solid fa-arrows-to-dot"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-1.5">
+                            <p class="text-[10px] text-sky-200/50 uppercase font-extrabold tracking-wider">Simulated Storm Vector Override</p>
+                            <p class="text-xs text-slate-300 leading-relaxed">Drag the control node to customize wind patterns. This overrides the real-time weather feed's physics rendering, instantly changing canvas wind directions.</p>
+                            <button onclick="resetWindVectorJoystick()" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[9px] font-bold uppercase tracking-widest text-white transition">
+                                Reset Coordinates
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Astronomical Cycles -->
+                <div class="glass-panel p-5 rounded-[2.5rem] space-y-4 cursor-pointer" onclick="triggerCardWobble(this)">
+                    <div class="shine-glow"></div>
+                    <h3 class="text-xs font-black tracking-widest uppercase text-sky-200/40">Astronomical Cycle</h3>
+                    <div class="grid grid-cols-2 gap-4 relative">
+                        <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-0.5 border-t border-dashed border-white/10"></div>
+                        
+                        <!-- Sunrise -->
+                        <div class="flex items-center gap-3.5 z-10 bg-slate-950/40 p-3 rounded-2xl border border-white/5">
+                            <div class="p-3 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-circle-arrow-up"></i>
+                            </div>
+                            <div>
+                                <p class="text-[9px] text-sky-200/40 uppercase font-bold tracking-wider">Dawn Elevation</p>
+                                <p id="sunrise-time" class="text-sm font-black text-slate-100">--:-- AM</p>
+                            </div>
+                        </div>
+
+                        <!-- Sunset -->
+                        <div class="flex items-center gap-3.5 z-10 bg-slate-950/40 p-3 rounded-2xl border border-white/5">
+                            <div class="p-3 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-circle-arrow-down"></i>
+                            </div>
+                            <div>
+                                <p class="text-[9px] text-sky-200/40 uppercase font-bold tracking-wider">Dusk Occultation</p>
+                                <p id="sunset-time" class="text-sm font-black text-slate-100">--:-- PM</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic High-Resolution Radar Map -->
+                <div class="glass-panel p-5 rounded-[2.5rem] flex flex-col gap-4 cursor-pointer" onclick="triggerCardWobble(this)">
+                    <div class="shine-glow"></div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-2 rounded-xl glass-card text-sky-400 flex items-center justify-center">
+                                <i class="fa-solid fa-map-location-dot text-sm"></i>
+                            </div>
+                            <div>
+                                <span class="text-sm font-black text-white block">Interactive Synoptic Globe</span>
+                                <span class="text-[10px] text-amber-400 font-bold block"><i class="fa-solid fa-hand-pointer mr-1"></i> Click Map to Fetch Coordinates</span>
+                            </div>
+                        </div>
+                        <span id="map-coords" class="text-[9px] text-sky-200/40 font-mono tracking-widest font-extrabold">LAT: -- / LON: --</span>
+                    </div>
+                    
+                    <div id="map-view" class="w-full h-64 rounded-2xl overflow-hidden relative border border-white/10 shadow-inner z-10"></div>
+                </div>
+
+                <!-- Favorite Locations list -->
+                <div class="glass-panel p-5 rounded-[2.5rem] space-y-4 cursor-pointer" onclick="triggerCardWobble(this)">
+                    <div class="shine-glow"></div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-2 rounded-xl glass-card text-yellow-400 flex items-center justify-center">
+                                <i class="fa-solid fa-star text-sm"></i>
+                            </div>
+                            <span class="text-sm font-black text-white">Favorite Coordinates</span>
+                        </div>
+                        <span id="fav-count" class="text-[9px] bg-sky-500/10 px-3 py-1 rounded-full text-sky-300 border border-sky-400/25 font-bold uppercase tracking-wider">0 PINNED</span>
+                    </div>
+
+                    <div id="favorites-list" class="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1"></div>
+                </div>
+
+            </section>
+
+        </main>
+
+        <!-- Footer Information Block with copyright signatures -->
+        <footer class="mt-auto pt-10 pb-6 text-center border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4 hide-on-zen transition-all duration-700">
+            <p class="text-[10px] text-sky-200/30 uppercase tracking-widest font-extrabold">&copy; 2026 Atmosphere Stations. Engineered by Bhaveshh. Live atmospheric updates synchronized globally.</p>
+            <div class="flex gap-5 text-xs text-sky-200/40 font-semibold uppercase tracking-wider">
+                <a href="#" class="hover:text-sky-300 transition-colors">Documentation</a>
+                <span>&middot;</span>
+                <a href="#" class="hover:text-sky-300 transition-colors">Open-Meteo</a>
+                <span>&middot;</span>
+                <span class="text-sky-300/60 font-black">By Bhaveshh</span>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Application Logic Script -->
+    <script src="script.js"></script>
+</body>
+</html>
